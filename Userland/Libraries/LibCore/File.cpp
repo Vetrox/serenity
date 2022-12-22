@@ -7,6 +7,7 @@
 #include <AK/LexicalPath.h>
 #include <AK/Platform.h>
 #include <AK/ScopeGuard.h>
+#include <AK/Vector.h>
 #include <LibCore/DirIterator.h>
 #include <LibCore/File.h>
 #include <LibCore/System.h>
@@ -578,6 +579,39 @@ ErrorOr<void, File::RemoveError> File::remove(DeprecatedString const& path, Recu
 
     return {};
 }
+
+Vector<DeprecatedString> File::resolve_executables_from_environment(StringView filename)
+{
+    if (filename.is_empty())
+        return {};
+
+    // Paths that aren't just a file name generally count as already resolved.
+    if (filename.contains('/')) {
+        if (access(DeprecatedString { filename }.characters(), X_OK) != 0)
+            return {};
+
+        return { filename };
+    }
+
+    auto const* path_str = getenv("PATH");
+    StringView path;
+    if (path_str)
+        path = { path_str, strlen(path_str) };
+    if (path.is_empty())
+        path = DEFAULT_PATH_SV;
+
+    auto directories = path.split_view(':');
+    Vector<DeprecatedString> executables;
+
+    for (auto directory : directories) {
+        auto file = DeprecatedString::formatted("{}/{}", directory, filename);
+
+        if (access(file.characters(), X_OK) == 0)
+            executables.append(file);
+    }
+
+    return executables;
+};
 
 Optional<DeprecatedString> File::resolve_executable_from_environment(StringView filename)
 {

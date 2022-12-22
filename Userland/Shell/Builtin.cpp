@@ -64,10 +64,11 @@ int Shell::builtin_where(int argc, char const** argv)
             continue;
         }
 
-        auto path = Core::File::resolve_executable_from_environment(current_command);
-        if (path.has_value()) {
+        auto executables = Core::File::resolve_executables_from_environment(current_command);
+        if (executables.size() > 0) {
+            for (auto const& file : executables)
+                outln(file);
             at_least_one_succeded = true;
-            outln(path.value());
             continue;
         }
         if (!at_least_one_succeded)

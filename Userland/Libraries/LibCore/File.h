@@ -117,6 +117,7 @@ public:
     static NonnullRefPtr<File> standard_error();
 
     static Optional<DeprecatedString> resolve_executable_from_environment(StringView filename);
+    static Vector<DeprecatedString> resolve_executables_from_environment(StringView filename);
 
 private:
     File(Object* parent = nullptr)
